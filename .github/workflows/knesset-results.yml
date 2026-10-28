@@ -1,0 +1,38 @@
+# Pulls the latest official results every 5 minutes and commits them for the
+# Knesset simulator (knesset/). Disable this workflow once the final results are out.
+name: Update Knesset results
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: knesset-results
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch results from the Central Elections Committee
+        run: python3 .github/scripts/update_knesset.py
+
+      - name: Commit if the numbers changed
+        run: |
+          if [ -n "$(git status --porcelain knesset/data)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+            git add knesset/data
+            git commit -m "Update Knesset results from the Central Elections Committee"
+            git pull --rebase --quiet
+            git push
+          else
+            echo "No change in results."
+          fi
