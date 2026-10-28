@@ -102,7 +102,7 @@ dialog#cityDlg{width:min(920px,calc(100vw - 32px))}
 .city>button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(90px,170px) 1fr auto;gap:12px;align-items:center;width:100%;padding:10px 12px;cursor:pointer;border-radius:12px}
 .city>button:hover{background:#1b3554}
 .city>button:focus-visible{outline:2px solid #64d6c0}
-.cname{font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cname{font-weight:bold;overflow-wrap:anywhere}
 .cbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:#263a54}
 .cbar i{display:block;height:100%}
 .cmeta{font-size:11px;color:#aabbd1;white-space:nowrap}
@@ -112,8 +112,10 @@ dialog#cityDlg{width:min(920px,calc(100vw - 32px))}
 .crow .track i{display:block;height:100%}
 .crow span:last-child{color:#aabbd1;text-align:left;direction:ltr}
 @media(max-width:700px){
- .city>button{grid-template-columns:1fr auto;gap:6px 10px;padding:8px 10px}
- .cbar{grid-column:1/-1;grid-row:2}
+ .city>button{grid-template-columns:1fr;gap:4px;padding:9px 10px}
+ .cname{white-space:normal;overflow:visible;font-size:15px}
+ .cmeta{grid-row:2;white-space:normal}
+ .cbar{grid-row:3;grid-column:1;margin-top:2px}
  .crow{grid-template-columns:96px 1fr 92px;font-size:11px}
  .ctools input,.ctools select{font-size:13px;padding:7px 8px}
 }
