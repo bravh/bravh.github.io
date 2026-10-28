@@ -1,10 +1,9 @@
-# Pulls the latest official results every 5 minutes and commits them for the
-# Knesset simulator (knesset/). Disable this workflow once the final results are out.
+# Pulls the latest official results and commits them for the Knesset simulator.
+# Manual only: the committee's site sends a bot challenge to cloud servers, so the
+# regular updates run from a home PC (see .github/scripts/update_knesset.py).
 name: Update Knesset results
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
