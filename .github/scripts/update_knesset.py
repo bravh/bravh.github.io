@@ -45,7 +45,11 @@ def fetch():
     req = urllib.request.Request(CSV_URL, headers={"User-Agent": "Mozilla/5.0 (knesset-simulator updater)"})
     with urllib.request.urlopen(req, timeout=60) as r:
         modified = r.headers.get("Last-Modified")
-        return r.read().decode("utf-8-sig"), modified
+        body = r.read()
+        if not body.strip() or b"," not in body[:500]:
+            raise SystemExit(f"Unexpected response: HTTP {r.status}, {len(body)} bytes, "
+                             f"headers={dict(r.headers)}, start={body[:300]!r}")
+        return body.decode("utf-8-sig"), modified
 
 
 def to_int(s):
