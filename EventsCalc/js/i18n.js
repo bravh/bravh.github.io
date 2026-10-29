@@ -24,7 +24,9 @@ const I18N = {
       imported: 'יובאו {n} אנשי קשר', history: 'היסטוריית אירועים', noHistory: 'אין עדיין אירועים משותפים',
       gaveMe: 'נתן/ה לי', iGave: 'נתתי', net: 'מאזן נטו', partner: 'בן/בת זוג', sortName: 'לפי שם', sortBalance: 'לפי מאזן',
       filterCat: 'סינון לפי קטגוריה',
-      importGoogle: 'ייבוא מאנשי הקשר של Google', importing: 'מייבא…', importGoogleDone: 'יובאו {n} חדשים, {s} כבר היו קיימים'
+      importGoogle: 'ייבוא מאנשי הקשר של Google', importing: 'מייבא…', importGoogleDone: 'יובאו {n} חדשים, {s} כבר היו קיימים',
+      selectAll: 'בחירת הכל', selectNone: 'ביטול הבחירה', selectedCount: 'נבחרו {n} מתוך {total}',
+      importSelected: 'ייבוא {n} אנשי קשר', alreadyExists: 'קיים', importNone: 'לא נמצאו אנשי קשר עם מספר טלפון'
     },
     cat: {
       friends: 'חברים', family: 'משפחה', work: 'עבודה', class: 'לימודים', army: 'צבא',
@@ -113,7 +115,9 @@ const I18N = {
       imported: 'Imported {n} contacts', history: 'Event history', noHistory: 'No shared events yet',
       gaveMe: 'Gave me', iGave: 'I gave', net: 'Net balance', partner: 'Partner', sortName: 'By name', sortBalance: 'By balance',
       filterCat: 'Filter by category',
-      importGoogle: 'Import from Google Contacts', importing: 'Importing…', importGoogleDone: 'Imported {n} new, {s} already existed'
+      importGoogle: 'Import from Google Contacts', importing: 'Importing…', importGoogleDone: 'Imported {n} new, {s} already existed',
+      selectAll: 'Select all', selectNone: 'Clear selection', selectedCount: '{n} of {total} selected',
+      importSelected: 'Import {n} contacts', alreadyExists: 'Exists', importNone: 'No contacts with a phone number found'
     },
     cat: {
       friends: 'Friends', family: 'Family', work: 'Work', class: 'Classmates', army: 'Army',

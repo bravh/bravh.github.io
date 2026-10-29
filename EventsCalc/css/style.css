@@ -181,3 +181,12 @@ h3{font-size:15px;margin:0 0 6px}
 .sync-dot.syncing{animation:sync-pulse 1s ease-in-out infinite}
 @keyframes sync-pulse{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.sync-dot.syncing{animation:none}}
+
+/* Google contacts import picker */
+.imp-bar{display:flex;justify-content:space-between;align-items:center;margin:8px 0;gap:8px}
+.imp-list{max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.imp-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer}
+.imp-row:last-child{border-bottom:0}
+.imp-row.exists{opacity:.55;cursor:default}
+.imp-row input[type=checkbox]{width:22px;height:22px;accent-color:var(--primary);flex:none;margin:0}
+.imp-row .avatar{width:36px;height:36px;font-size:14px}

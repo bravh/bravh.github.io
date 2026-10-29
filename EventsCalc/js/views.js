@@ -313,17 +313,141 @@ function vwImportGoogleContacts(button) {
   (Auth.isSignedIn() ? Promise.resolve() : vwSignIn())
     .then(() => {
       toast(t('contacts.importing'));
-      return Sync.importGoogleContacts();
+      return Sync.fetchGoogleContacts();
     })
-    .then(r => {
+    .then(list => {
       done();
-      toast(t('contacts.importGoogleDone', { n: r.imported, s: r.skipped }));
-      rerender();
+      if (!list || !list.length) { toast(t('contacts.importNone')); return; }
+      vwGoogleImportDialog(list);
     })
     .catch(e => {
       done();
       toast(vwAuthErrKnown(e) ? vwAuthErr(e) : t('auth.errors.network') + (e && e.message ? ' ' + e.message : ''));
     });
+}
+
+/* Picker for the fetched Google contacts [{name, phone, exists}]: search, select all (visible rows),
+   category, then import the checked ones. Rows are built once; filtering only toggles `hidden`. */
+function vwGoogleImportDialog(list) {
+  const rows = [];          /* {name, phone, key, exists, nameLc, digits, el, cb} */
+  const sel = new Set();    /* keys of checked rows. Key = last 9 digits, the same rule findContactByPhone uses */
+  const seen = new Set();
+  let q = '';
+
+  const listEl = h('div', { class: 'imp-list' });
+  const emptyEl = h('div', { class: 'muted', hidden: true, style: { padding: '16px', textAlign: 'center' } }, t('home.noResults'));
+  const counter = h('span', { class: 'muted' });
+  const toggleLbl = h('span');
+  const importLbl = h('span');
+  let selectable = 0;
+
+  const frag = document.createDocumentFragment();
+  for (const c of list) {
+    const key = normPhone(c.phone).slice(-9);
+    if (!c.name || !key || seen.has(key)) continue;   /* duplicates would be skipped by the import anyway */
+    seen.add(key);
+    const exists = !!c.exists;
+    const cb = h('input', { type: 'checkbox', checked: !exists, disabled: exists, 'aria-label': c.name });
+    const row = {
+      name: c.name, phone: c.phone, key, exists,
+      nameLc: c.name.toLowerCase(), digits: normPhone(c.phone), cb, el: null
+    };
+    row.el = h('div', {
+      class: 'imp-row' + (exists ? ' exists' : ''),
+      onClick: e => {
+        if (exists) return;
+        if (e.target !== cb) cb.checked = !cb.checked;   /* a click on the box itself already toggled it */
+        if (cb.checked) sel.add(key); else sel.delete(key);
+        refresh();
+      }
+    },
+    cb,
+    avatar(c.name),
+    h('div', { class: 'grow' },
+      h('div', { class: 'vw-bold ellipsis' }, c.name),
+      h('div', { class: 'muted ellipsis' }, vwPhoneText(c.phone))),
+    exists ? h('span', { class: 'badge' }, t('contacts.alreadyExists')) : null);
+    if (!exists) { sel.add(key); selectable++; }
+    rows.push(row);
+    frag.append(row.el);
+  }
+  listEl.append(frag, emptyEl);
+
+  /* visible, selectable rows and whether all of them are checked */
+  function visibleState() {
+    let vis = 0, allOn = true;
+    for (const r of rows) {
+      if (r.exists || r.el.hidden) continue;
+      vis++;
+      if (!sel.has(r.key)) allOn = false;
+    }
+    return { vis, allOn: vis > 0 && allOn };
+  }
+
+  function refresh() {
+    const n = sel.size;
+    const st = visibleState();
+    counter.textContent = t('contacts.selectedCount', { n, total: selectable });
+    toggleLbl.textContent = st.allOn ? t('contacts.selectNone') : t('contacts.selectAll');
+    toggleBtn.classList.toggle('primary', st.allOn);
+    toggleBtn.disabled = st.vis === 0;
+    importLbl.textContent = t('contacts.importSelected', { n });
+    importBtn.disabled = n === 0;
+  }
+
+  function applyFilter() {
+    const ql = q.trim().toLowerCase();
+    const qd = normPhone(ql);
+    let shown = 0;
+    for (const r of rows) {
+      const show = !ql || r.nameLc.includes(ql) || r.phone.toLowerCase().includes(ql) || (!!qd && r.digits.includes(qd));
+      if (r.el.hidden === show) r.el.hidden = !show;
+      if (show) shown++;
+    }
+    emptyEl.hidden = shown > 0;
+    refresh();
+  }
+
+  const sb = vwSearchBox(t('common.search'), '', v => { q = v; applyFilter(); });
+
+  const toggleBtn = h('button', {
+    type: 'button', class: 'btn sm',
+    onClick: () => {
+      const on = !visibleState().allOn;
+      for (const r of rows) {
+        if (r.exists || r.el.hidden) continue;
+        r.cb.checked = on;
+        if (on) sel.add(r.key); else sel.delete(r.key);
+      }
+      refresh();
+    }
+  }, icon('check'), toggleLbl);
+
+  const catSel = select(DB.categories.map(c => [c.id, catLabel(c.id)]), 'other');
+
+  const importBtn = btn('', {
+    class: 'primary', icon: 'import',
+    onClick: () => {
+      const items = rows.filter(r => !r.exists && sel.has(r.key)).map(r => ({ name: r.name, phone: r.phone }));
+      if (!items.length) return;
+      const r = Sync.importContacts(items, catSel.value || 'other');
+      m.close();
+      toast(t('contacts.importGoogleDone', { n: r.imported, s: r.skipped }));
+      rerender();
+    }
+  });
+  importBtn.append(importLbl);   /* btn() skips an empty label, so the live label span is added here */
+
+  const m = openModal({
+    title: t('contacts.importGoogle'),
+    body: h('div', null,
+      sb.el,
+      h('div', { class: 'imp-bar' }, toggleBtn, counter),
+      field(t('contacts.category'), catSel, 'tag'),
+      listEl),
+    actions: [btn(t('common.cancel'), { onClick: () => m.close() }), importBtn]
+  });
+  refresh();
 }
 
 function vwContacts(root) {

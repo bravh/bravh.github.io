@@ -179,8 +179,11 @@
       return p;
     },
 
-    async importGoogleContacts() {
-      let imported = 0, skipped = 0, total = 0, pageToken = '';
+    /* Fetch all Google contacts that have a phone number, without importing.
+       Returns [{name, phone, exists}] where exists = a contact with that phone already exists locally. */
+    async fetchGoogleContacts() {
+      const out = [];
+      let pageToken = '';
       do {
         const url = PEOPLE + '?personFields=names,phoneNumbers&pageSize=1000&sortOrder=FIRST_NAME_ASCENDING' +
           (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
@@ -188,16 +191,29 @@
         for (const p of j.connections || []) {
           const ph = p.phoneNumbers && p.phoneNumbers[0];
           if (!ph) continue;
-          total++;
           const name = p.names && p.names[0] && p.names[0].displayName;
           const phone = ph.canonicalForm || ph.value;
-          if (!name || !normPhone(phone) || findContactByPhone(phone)) { skipped++; continue; }
-          upsertContact({ name, phone, cat: 'other', notes: '' });   // each save re-arms the debounced push
-          imported++;
+          if (!name || !normPhone(phone)) continue;
+          out.push({ name, phone, exists: !!findContactByPhone(phone) });
         }
         pageToken = j.nextPageToken || '';
       } while (pageToken);
-      return { imported, skipped, total };
+      return out;
+    },
+    /* Import a list of {name, phone} into the local contacts under category `cat` (default 'other').
+       Skips phones that already exist. Returns {imported, skipped, total}. */
+    importContacts(list, cat) {
+      let imported = 0, skipped = 0;
+      for (const c of list || []) {
+        if (!c.name || !normPhone(c.phone) || findContactByPhone(c.phone)) { skipped++; continue; }
+        upsertContact({ name: c.name, phone: c.phone, cat: cat || 'other', notes: '' });   // each save re-arms the debounced push
+        imported++;
+      }
+      return { imported, skipped, total: imported + skipped };
+    },
+    /* Fetch and import everything (kept for callers that do not show a picker). */
+    async importGoogleContacts(cat) {
+      return this.importContacts(await this.fetchGoogleContacts(), cat);
     }
   };
 
