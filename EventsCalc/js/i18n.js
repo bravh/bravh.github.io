@@ -23,7 +23,8 @@ const I18N = {
       empty: 'אין עדיין אנשי קשר. הוסיפו את הראשון.', import: 'ייבוא מהטלפון', importNA: 'ייבוא אנשי קשר לא נתמך בדפדפן זה',
       imported: 'יובאו {n} אנשי קשר', history: 'היסטוריית אירועים', noHistory: 'אין עדיין אירועים משותפים',
       gaveMe: 'נתן/ה לי', iGave: 'נתתי', net: 'מאזן נטו', partner: 'בן/בת זוג', sortName: 'לפי שם', sortBalance: 'לפי מאזן',
-      filterCat: 'סינון לפי קטגוריה'
+      filterCat: 'סינון לפי קטגוריה',
+      importGoogle: 'ייבוא מאנשי הקשר של Google', importing: 'מייבא…', importGoogleDone: 'יובאו {n} חדשים, {s} כבר היו קיימים'
     },
     cat: {
       friends: 'חברים', family: 'משפחה', work: 'עבודה', class: 'לימודים', army: 'צבא',
@@ -60,8 +61,32 @@ const I18N = {
     settings: {
       title: 'הגדרות', language: 'שפה', he: 'עברית', en: 'English', data: 'נתונים', export: 'ייצוא גיבוי (JSON)',
       import: 'ייבוא גיבוי', clear: 'מחיקת כל הנתונים', cleared: 'הנתונים נמחקו', imported: 'הגיבוי יובא',
-      badFile: 'קובץ לא תקין', about: 'אודות', version: 'גרסה', local: 'הנתונים נשמרים במכשיר זה בלבד.',
+      badFile: 'קובץ לא תקין', about: 'אודות', version: 'גרסה', local: 'הנתונים נשמרים במכשיר זה. עם כניסה לחשבון Google הם מסונכרנים גם לדרייב שלך.',
       demo: 'טעינת נתוני דוגמה', categories: 'קטגוריות', myName: 'השם שלי (להזמנות)', partnerName: 'שם בן/בת זוג'
+    },
+    auth: {
+      account: 'חשבון Google', signIn: 'כניסה עם Google', signOut: 'יציאה מהחשבון', signedInAs: 'מחובר/ת בתור',
+      clientId: 'Google Client ID',
+      clientIdHint: 'ב-Google Cloud Console (APIs & Services → Credentials) צרו OAuth client ID מסוג Web application, והוסיפו ל-Authorized JavaScript origins את https://bravh.github.io ואת http://localhost:8787. הפעילו את Google Drive API ואת People API, ואז הדביקו כאן את ה-Client ID.',
+      saveClientId: 'שמירת Client ID', changeClientId: 'שינוי Client ID',
+      notConfigured: 'כדי להתחבר יש להזין Client ID בהגדרות',
+      errors: {
+        not_configured: 'לא הוגדר Client ID של Google',
+        gis_unavailable: 'ספריית Google לא נטענה (בדקו חיבור/חוסם פרסומות)',
+        popup_closed: 'חלון הכניסה נסגר',
+        access_denied: 'הגישה נדחתה',
+        interaction_required: 'נדרשת כניסה מחדש',
+        busy: 'בקשה קודמת עדיין פעילה',
+        network: 'שגיאת רשת'
+      }
+    },
+    sync: {
+      title: 'סנכרון לענן (Google Drive)',
+      explain: 'הנתונים נשמרים בתיקיית האפליקציה בדרייב שלך ומסונכרנים אוטומטית בין המכשירים.',
+      status: { off: 'כבוי', needsAuth: 'נדרשת כניסה מחדש', idle: 'ממתין', syncing: 'מסנכרן…', synced: 'מסונכרן', error: 'שגיאה' },
+      lastSync: 'סנכרון אחרון: {time}', pushNow: 'שמירה לענן עכשיו', pullNow: 'שחזור מהענן',
+      pullConfirm: 'לשחזר את הנתונים מהענן? הנתונים במכשיר זה יוחלפו.',
+      restoredFromCloud: 'הנתונים שוחזרו מהענן', pushed: 'נשמר בענן'
     }
   },
   en: {
@@ -87,7 +112,8 @@ const I18N = {
       empty: 'No contacts yet. Add the first one.', import: 'Import from phone', importNA: 'Contact import is not supported in this browser',
       imported: 'Imported {n} contacts', history: 'Event history', noHistory: 'No shared events yet',
       gaveMe: 'Gave me', iGave: 'I gave', net: 'Net balance', partner: 'Partner', sortName: 'By name', sortBalance: 'By balance',
-      filterCat: 'Filter by category'
+      filterCat: 'Filter by category',
+      importGoogle: 'Import from Google Contacts', importing: 'Importing…', importGoogleDone: 'Imported {n} new, {s} already existed'
     },
     cat: {
       friends: 'Friends', family: 'Family', work: 'Work', class: 'Classmates', army: 'Army',
@@ -124,8 +150,32 @@ const I18N = {
     settings: {
       title: 'Settings', language: 'Language', he: 'עברית', en: 'English', data: 'Data', export: 'Export backup (JSON)',
       import: 'Import backup', clear: 'Delete all data', cleared: 'All data deleted', imported: 'Backup imported',
-      badFile: 'Invalid file', about: 'About', version: 'Version', local: 'Data is stored on this device only.',
+      badFile: 'Invalid file', about: 'About', version: 'Version', local: 'Data is stored on this device. When signed in with Google it is also synced to your Drive.',
       demo: 'Load demo data', categories: 'Categories', myName: 'My name (for invitations)', partnerName: 'Partner name'
+    },
+    auth: {
+      account: 'Google account', signIn: 'Sign in with Google', signOut: 'Sign out', signedInAs: 'Signed in as',
+      clientId: 'Google Client ID',
+      clientIdHint: 'In Google Cloud Console (APIs & Services → Credentials) create an OAuth client ID of type Web application and add https://bravh.github.io and http://localhost:8787 as Authorized JavaScript origins. Enable the Google Drive API and the People API, then paste the client ID here.',
+      saveClientId: 'Save Client ID', changeClientId: 'Change Client ID',
+      notConfigured: 'Enter a Client ID in Settings to sign in',
+      errors: {
+        not_configured: 'Google Client ID is not set',
+        gis_unavailable: 'Google library failed to load (check your connection / ad blocker)',
+        popup_closed: 'The sign-in window was closed',
+        access_denied: 'Access denied',
+        interaction_required: 'Please sign in again',
+        busy: 'A previous request is still in progress',
+        network: 'Network error'
+      }
+    },
+    sync: {
+      title: 'Cloud sync (Google Drive)',
+      explain: 'Your data is saved in the app folder in your Drive and synced automatically between your devices.',
+      status: { off: 'Off', needsAuth: 'Sign-in required', idle: 'Idle', syncing: 'Syncing…', synced: 'Synced', error: 'Error' },
+      lastSync: 'Last sync: {time}', pushNow: 'Save to cloud now', pullNow: 'Restore from cloud',
+      pullConfirm: 'Restore data from the cloud? Data on this device will be replaced.',
+      restoredFromCloud: 'Data restored from the cloud', pushed: 'Saved to the cloud'
     }
   }
 };

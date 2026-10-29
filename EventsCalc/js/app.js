@@ -45,5 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-back').addEventListener('click', back);
   document.getElementById('btn-lang').addEventListener('click', () => { setLang(LANG === 'he' ? 'en' : 'he'); rerender(); });
   document.querySelectorAll('#tabbar button').forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
+  if (window.Auth) Auth.init();
+  if (window.Sync) Sync.init();
   go('home');
 });

@@ -19,18 +19,35 @@ function emptyDB() {
   };
 }
 
+function normalizeDB(d) {
+  if (!d || typeof d !== 'object') d = emptyDB();
+  if (!d.categories) d.categories = emptyDB().categories;
+  if (!d.settings) d.settings = {};
+  d.contacts = d.contacts || [];
+  d.events = d.events || [];
+  d.updatedAt = +d.updatedAt || 0;
+  return d;
+}
 function loadDB() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    DB = raw ? JSON.parse(raw) : emptyDB();
-  } catch (e) { DB = emptyDB(); }
-  if (!DB.categories) DB.categories = emptyDB().categories;
-  if (!DB.settings) DB.settings = {};
-  DB.contacts = DB.contacts || [];
-  DB.events = DB.events || [];
+  let d = null;
+  try { const raw = localStorage.getItem(STORE_KEY); d = raw ? JSON.parse(raw) : null; } catch (e) { d = null; }
+  DB = normalizeDB(d);
   return DB;
 }
-function saveDB() { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }
+
+/* Save hooks: sync.js registers one to push changes to the cloud.
+   opts: { keepStamp: true } keeps DB.updatedAt (used when restoring from the cloud),
+         { fromSync: true } marks a save that came from the cloud so hooks must not push it back. */
+const DB_HOOKS = [];
+function onDBSaved(fn) { DB_HOOKS.push(fn); }
+function saveDB(opts) {
+  opts = opts || {};
+  if (!opts.keepStamp) DB.updatedAt = Date.now();
+  localStorage.setItem(STORE_KEY, JSON.stringify(DB));
+  DB_HOOKS.forEach(fn => { try { fn(opts); } catch (e) { console.error(e); } });
+}
+/* Replace the whole database with data that came from the cloud (keeps its updatedAt). */
+function replaceDB(d) { DB = normalizeDB(d); saveDB({ keepStamp: true, fromSync: true }); return DB; }
 
 /* ---- categories ---- */
 function catLabel(id) {

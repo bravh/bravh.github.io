@@ -120,6 +120,18 @@ function vwSearchBox(placeholder, value, onInput) {
 
 function vwIconBox(name) { return h('div', { class: 'vw-ic' }, icon(name)); }
 
+/* ---- Google auth helpers (window.Auth / window.Sync may be missing if their scripts failed to load) ---- */
+function vwAuthErrKnown(e) {
+  const c = e && e.code;
+  return !!c && t('auth.errors.' + c) !== 'auth.errors.' + c;
+}
+/* localized message for an auth error code (falls back to "network") */
+function vwAuthErr(e) { return vwAuthErrKnown(e) ? t('auth.errors.' + e.code) : t('auth.errors.network'); }
+/* sync errors: a known auth code is localized, anything else shows its own message */
+function vwErrText(e) { return vwAuthErrKnown(e) ? vwAuthErr(e) : ((e && e.message) || vwAuthErr(e)); }
+/* Auth.signIn() called synchronously inside the click (popup needs the user gesture); sync throws become rejections */
+function vwSignIn() { return new Promise(resolve => resolve(Auth.signIn())); }
+
 function vwPhoneText(phone) { return h('bdi', { dir: 'ltr' }, phone); }
 
 function vwStat(o) {
@@ -289,6 +301,31 @@ async function importPhoneContacts() {
   rerender();
 }
 
+/* Import from Google Contacts (People API). Signs in first when needed. */
+function vwImportGoogleContacts(button) {
+  if (!window.Auth || !window.Sync || !Auth.isConfigured()) {
+    toast(t('auth.notConfigured'));
+    go('settings');
+    return;
+  }
+  if (button) button.disabled = true;
+  const done = () => { if (button) button.disabled = false; };
+  (Auth.isSignedIn() ? Promise.resolve() : vwSignIn())
+    .then(() => {
+      toast(t('contacts.importing'));
+      return Sync.importGoogleContacts();
+    })
+    .then(r => {
+      done();
+      toast(t('contacts.importGoogleDone', { n: r.imported, s: r.skipped }));
+      rerender();
+    })
+    .catch(e => {
+      done();
+      toast(vwAuthErrKnown(e) ? vwAuthErr(e) : t('auth.errors.network') + (e && e.message ? ' ' + e.message : ''));
+    });
+}
+
 function vwContacts(root) {
   setTitle(t('contacts.title'));
   let q = '', cat = 'all', sort = 'name';
@@ -336,9 +373,15 @@ function vwContacts(root) {
     })));
   }
 
+  const googleBtn = btn(t('contacts.importGoogle'), {
+    icon: 'import', class: 'block', onClick: () => vwImportGoogleContacts(googleBtn)
+  });
+
   root.append(
     sb.el, catChips, sortSeg, listWrap,
-    btn(t('contacts.import'), { icon: 'import', class: 'block', onClick: importPhoneContacts }),
+    h('div', { class: 'grid2' },
+      btn(t('contacts.import'), { icon: 'import', class: 'block', onClick: importPhoneContacts }),
+      googleBtn),
     h('div', { style: { height: '72px' } }),
     fab);
   renderList();
@@ -431,6 +474,160 @@ function vwDownloadBackup() {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
+/* Standard four-colour Google "G" (style.css strips the global stroke for .gbtn svg) */
+const VW_GOOGLE_G = '<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">'
+  + '<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>'
+  + '<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>'
+  + '<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>'
+  + '<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>'
+  + '</svg>';
+
+/* White "Sign in with Google" button. On success the settings screen is redrawn. */
+function vwGoogleBtn() {
+  const b = h('button', { class: 'gbtn', type: 'button' },
+    h('span', { class: 'gbtn-g', html: VW_GOOGLE_G }),
+    h('span', null, t('auth.signIn')));
+  b.addEventListener('click', () => {
+    b.disabled = true;
+    vwSignIn()
+      .then(() => { toast(t('common.saved')); rerender(); })
+      .catch(e => { b.disabled = false; toast(vwAuthErr(e)); });
+  });
+  return b;
+}
+
+/* Client ID field + hint + save button */
+function vwClientIdForm(prefill) {
+  const inp = input({
+    value: prefill || '', dir: 'ltr', autocomplete: 'off', autocapitalize: 'off',
+    placeholder: '1234567890-xxxx.apps.googleusercontent.com'
+  });
+  inp.setAttribute('spellcheck', 'false');
+  inp.addEventListener('input', () => { inp.style.borderColor = ''; });
+  const save = () => {
+    const v = inp.value.trim();
+    if (!v) { inp.style.borderColor = 'var(--red)'; inp.focus(); return; }
+    Auth.setClientId(v);
+    toast(t('common.saved'));
+    rerender();
+  };
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+  return h('div', null,
+    field(t('auth.clientId'), inp),
+    h('div', { class: 'muted small auth-hint' }, t('auth.clientIdHint')),
+    btn(t('auth.saveClientId'), { icon: 'check', class: 'primary block', onClick: save }));
+}
+
+function vwProfilePic(p) {
+  const name = p.name || p.email || '';
+  const fallback = () => {
+    const av = avatar(name);
+    Object.assign(av.style, { width: '48px', height: '48px' });
+    return av;
+  };
+  if (!p.picture) return fallback();
+  return h('img', {
+    class: 'profile-pic', src: p.picture, alt: name, referrerpolicy: 'no-referrer',
+    onError: e => e.target.replaceWith(fallback())
+  });
+}
+
+/* Account card: Client ID setup, Google sign-in, or the signed-in profile */
+function vwAccountCard() {
+  const card = h('div', { class: 'card' },
+    h('h3', { class: 'vw-sec' }, icon('users'), t('auth.account')));
+
+  if (!Auth.isConfigured()) {
+    card.append(vwClientIdForm(''));
+  } else if (!Auth.isSignedIn()) {
+    const form = vwClientIdForm(Auth.getClientId());
+    form.hidden = true;
+    form.classList.add('mt');
+    const changeBtn = btn(t('auth.changeClientId'), {
+      class: 'ghost sm',
+      onClick: () => {
+        form.hidden = !form.hidden;
+        if (!form.hidden) form.querySelector('input').focus();
+      }
+    });
+    card.append(vwGoogleBtn(), h('div', { class: 'center mt' }, changeBtn), form);
+  } else {
+    const p = Auth.getProfile() || {};
+    card.append(
+      h('div', { class: 'row' },
+        vwProfilePic(p),
+        h('div', { class: 'grow' },
+          h('div', { class: 'vw-bold ellipsis' }, p.name || p.email || ''),
+          p.name && p.email ? h('div', { class: 'muted ellipsis' }, h('bdi', { dir: 'ltr' }, p.email)) : null)),
+      btn(t('auth.signOut'), {
+        icon: 'x', class: 'block mt',
+        onClick: () => Auth.signOut().then(() => rerender()).catch(e => toast(vwErrText(e)))
+      }));
+  }
+  return card;
+}
+
+/* Live sync status. A single Sync.onChange listener is registered once; it repaints the
+   card of the settings screen currently shown (and does nothing if that card was removed). */
+let vwSyncUpdater = null;
+let vwSyncHooked = false;
+function vwHookSync() {
+  if (vwSyncHooked || !window.Sync) return;
+  vwSyncHooked = true;
+  Sync.onChange(() => { if (vwSyncUpdater) vwSyncUpdater(); });
+}
+
+function vwSyncCard() {
+  const dot = h('span', { class: 'sync-dot off' });
+  const statusEl = h('span', { class: 'vw-bold' });
+  const lastEl = h('div', { class: 'muted small', hidden: true });
+  const errEl = h('div', { class: 'small neg', hidden: true, style: { overflowWrap: 'anywhere' } });
+  const authSlot = h('div', { class: 'mt', hidden: true });
+
+  const pushBtn = btn(t('sync.pushNow'), {
+    icon: 'export', class: 'block',
+    onClick: () => Sync.push().then(() => toast(t('sync.pushed'))).catch(e => toast(vwErrText(e)))
+  });
+  const pullBtn = btn(t('sync.pullNow'), {
+    icon: 'import', class: 'block',
+    onClick: () => confirmDialog(t('sync.pullConfirm'), () => {
+      Sync.pull({ force: true })
+        .then(r => {
+          toast(r && r.applied ? t('sync.restoredFromCloud') : t('common.none'));
+          if (r && r.applied) rerender();
+        })
+        .catch(e => toast(vwErrText(e)));
+    })
+  });
+
+  const card = h('div', { class: 'card' },
+    h('h3', { class: 'vw-sec' }, icon('share'), t('sync.title')),
+    h('div', { class: 'muted small mb' }, t('sync.explain')),
+    h('div', { class: 'row' }, dot, statusEl),
+    lastEl, errEl, authSlot,
+    h('div', { class: 'vw-stack mt' }, pushBtn, pullBtn));
+
+  function paint() {
+    const st = Sync.state || {};
+    const status = st.status || 'off';
+    dot.className = 'sync-dot ' + status;
+    statusEl.textContent = t('sync.status.' + status);
+    lastEl.hidden = !st.lastSync;
+    lastEl.textContent = st.lastSync
+      ? t('sync.lastSync', { time: new Date(st.lastSync).toLocaleString(LANG === 'he' ? 'he-IL' : 'en-GB') })
+      : '';
+    errEl.hidden = !st.error;
+    errEl.textContent = st.error || '';
+    authSlot.hidden = status !== 'needsAuth';
+    if (status === 'needsAuth' && !authSlot.firstChild) authSlot.append(vwGoogleBtn());
+    pushBtn.disabled = pullBtn.disabled = status === 'syncing' || !Auth.isSignedIn();
+  }
+  paint();
+  vwSyncUpdater = () => { if (card.isConnected) paint(); };
+  vwHookSync();
+  return card;
+}
+
 function vwSettings(root) {
   setTitle(t('settings.title'));
   DB.settings = DB.settings || {};
@@ -470,6 +667,12 @@ function vwSettings(root) {
       rerender();
     })
   });
+
+  /* Google account + cloud sync cards go first (skipped if auth.js / sync.js failed to load) */
+  if (window.Auth) {
+    root.append(vwAccountCard());
+    if (window.Sync && Auth.isConfigured()) root.append(vwSyncCard());
+  }
 
   root.append(
     h('div', { class: 'card' },

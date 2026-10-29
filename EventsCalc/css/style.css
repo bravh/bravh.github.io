@@ -155,3 +155,22 @@ h3{font-size:15px;margin:0 0 6px}
 .status-dot{width:10px;height:10px;border-radius:50%;flex:none}
 .st-invited{background:#9aa3b2}.st-approved{background:#1f6feb}.st-declined{background:#b91c1c}.st-arrived{background:#15803d}
 .invite-preview{white-space:pre-wrap;background:var(--bg);border-radius:12px;padding:12px;font-size:14px;line-height:1.6;border:1px dashed var(--line)}
+
+/* Google account / cloud sync (Settings) */
+/* Google sign-in button: fixed light colours, so it looks the same in dark mode */
+.gbtn{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:44px;padding:0 16px;
+  border-radius:12px;border:1px solid #dadce0;background:#fff;color:#1f1f1f;font-weight:600;cursor:pointer}
+.gbtn:hover{background:#f7f8f8}
+.gbtn:disabled{opacity:.6;cursor:default}
+.gbtn-g{display:flex}
+.gbtn svg{width:18px;height:18px;stroke:none}
+.auth-hint{margin:-4px 0 12px;line-height:1.5;overflow-wrap:anywhere}
+.profile-pic{width:48px;height:48px;border-radius:50%;object-fit:cover;flex:none;background:var(--line)}
+.sync-dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none;background:#9aa3b2}
+.sync-dot.off,.sync-dot.idle{background:#9aa3b2}
+.sync-dot.syncing,.sync-dot.needsAuth{background:#f59f00}
+.sync-dot.synced{background:#15803d}
+.sync-dot.error{background:#b91c1c}
+.sync-dot.syncing{animation:sync-pulse 1s ease-in-out infinite}
+@keyframes sync-pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.sync-dot.syncing{animation:none}}
