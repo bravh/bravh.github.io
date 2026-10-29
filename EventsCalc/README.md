@@ -3,21 +3,22 @@
 Static web app (no build step) for tracking event gifts given and received, contacts by category,
 guests with RSVP status, a venue seating map, and WhatsApp/SMS invitations. Hebrew by default, English toggle in the top bar.
 
+Live: https://bravh.github.io/EventsCalc/
+
+## Where this lives
+
+This folder is part of the `bravh.github.io` repository, which is the GitHub Pages site.
+Editing files here and running `git push` from the repository root deploys them; the site rebuilds in about a minute.
+
 ## Run locally
 
-Any static server works. For example:
+From the repository root (one level up):
 
 ```
 python -m http.server 8787
 ```
 
-Then open http://localhost:8787/ . Settings → "Load demo data" fills the app with sample contacts and events.
-
-## Deploy to GitHub Pages
-
-1. Push this folder to a repository (keep `index.html` at the root).
-2. Repository → Settings → Pages → Source: "Deploy from a branch", branch `main`, folder `/ (root)`.
-3. The app is served at `https://<user>.github.io/<repo>/`.
+Then open http://localhost:8787/EventsCalc/ . Settings → "Load demo data" fills the app with sample contacts and events.
 
 ## Files
 
