@@ -36,16 +36,25 @@
     if (!b) return;
     const p = readProfile();
     b.hidden = !p;
-    b.textContent = '';
-    if (!p) return;
-    b.title = p.name || p.email || '';
+    b.textContent = '';                       // a re-render always replaces the previous content
+    if (!p) { b.removeAttribute('title'); return; }
+    const name = String(p.name || '').trim(), email = String(p.email || '').trim();
+    const first = name.split(/\s+/)[0] || email.split('@')[0] || '';
+    b.title = [name || first, email].filter(Boolean).join(' · ');
     b.setAttribute('aria-label', t('auth.account'));
-    const fallback = () => { b.textContent = ''; b.append(icon('users')); };
-    if (!p.picture) return fallback();
-    b.append(h('img', {
-      src: p.picture, alt: '', width: 28, height: 28, referrerPolicy: 'no-referrer', onError: fallback,
-      style: { width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', display: 'block' }
-    }));
+    /* Colored initials circle (ui.js avatar) when there is no picture or it fails to load. */
+    const initials = () => (typeof avatar === 'function') ? avatar(first || '?') : icon('users');
+    if (p.picture) {
+      const img = h('img', {
+        src: p.picture, alt: '', width: 28, height: 28, referrerPolicy: 'no-referrer',
+        style: { width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', display: 'block', flex: 'none' }
+      });
+      img.addEventListener('error', () => { if (img.parentNode === b) img.replaceWith(initials()); }, { once: true });
+      b.append(img);
+    } else {
+      b.append(initials());
+    }
+    if (first) b.append(h('span', { class: 'acct-name' }, first));
   }
 
   /* ---- Google Identity Services plumbing ---- */
