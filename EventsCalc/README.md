@@ -31,6 +31,7 @@ Then open http://localhost:8787/EventsCalc/ . Settings → "Load demo data" fill
 | `js/ui.js` | DOM helpers, modals, toasts, view registry |
 | `js/layout.js` | seating map editor (round/square/rect tables, stage, drag, seat assignment) |
 | `js/views.js` | home dashboard + search, contacts, contact page, settings |
+| `js/vcard.js` | vCard / CSV contact-file parser (`VCard.parse`, `VCard.parseCSV`, `VCard.parseFile`) |
 | `js/events.js` | events list, event page, guests, invitations |
 | `js/app.js` | router and startup |
 
@@ -57,6 +58,16 @@ Sign-in uses Google Identity Services in the browser only (no server). Once sign
 | `js/config.js` | client ID and sync file name |
 | `js/auth.js` | `Auth`: sign-in/out, profile, access tokens with incremental scopes |
 | `js/sync.js` | `Sync`: Drive app-folder push/pull/reconcile, Google Contacts import |
+
+## Importing contacts
+
+The Contacts screen offers three ways to bring contacts in. All of them end in the same picker (search, select all, category, already-existing contacts greyed out):
+
+- **Phone contact picker** (Chrome on Android only): the "Import from phone" button opens the system contact picker. The button is hidden in browsers that lack the Contact Picker API.
+- **Google Contacts**: sign in with Google, then "Import from Google Contacts".
+- **vCard / CSV file** (works everywhere, and is the way to go on iPhone Safari and on desktop): "Import from file" accepts `.vcf` / `.vcard` / `.csv`, several files at once. Parsing lives in `js/vcard.js`. To get a file from an iPhone: Contacts → Lists → press and hold "All Contacts" (or "All iCloud") → Export → Save to Files, then pick that file in the app. On a computer: icloud.com → Contacts → Select All → Export vCard, or contacts.google.com → Export → vCard.
+
+Contacts without a phone number are skipped, and a contact whose phone (last 9 digits) is already saved is not imported twice.
 
 ## Data
 

@@ -26,7 +26,15 @@ const I18N = {
       filterCat: 'סינון לפי קטגוריה',
       importGoogle: 'ייבוא מאנשי הקשר של Google', importing: 'מייבא…', importGoogleDone: 'יובאו {n} חדשים, {s} כבר היו קיימים',
       selectAll: 'בחירת הכל', selectNone: 'ביטול הבחירה', selectedCount: 'נבחרו {n} מתוך {total}',
-      importSelected: 'ייבוא {n} אנשי קשר', alreadyExists: 'קיים', importNone: 'לא נמצאו אנשי קשר עם מספר טלפון'
+      importSelected: 'ייבוא {n} אנשי קשר', alreadyExists: 'קיים', importNone: 'לא נמצאו אנשי קשר עם מספר טלפון',
+      importFile: 'ייבוא מקובץ (vCard)',
+      importFileHelp: 'הדפדפן הזה לא יכול לפתוח את אנשי הקשר של הטלפון ישירות. ייצאו אותם לקובץ vCard ‏(.vcf) או CSV ובחרו אותו כאן.',
+      importFileIos: 'באייפון: אנשי קשר ← רשימות ← לחיצה ארוכה על "כל אנשי הקשר" (או "כל iCloud") ← ייצוא ← שמירה בקבצים.',
+      importFileIcloud: 'במחשב: icloud.com ← אנשי קשר ← בחירת הכל ← ייצוא vCard.',
+      importFileAndroid: 'באנדרואיד: אפליקציית אנשי הקשר ← תיקון וניהול ← ייצוא לקובץ.',
+      importFileGoogle: 'מ-Google: contacts.google.com ← ייצוא ← vCard.',
+      chooseFile: 'בחירת קובץ',
+      importFileEmpty: 'לא נמצאו אנשי קשר עם מספר טלפון בקובץ'
     },
     cat: {
       friends: 'חברים', family: 'משפחה', work: 'עבודה', class: 'לימודים', army: 'צבא',
@@ -117,7 +125,15 @@ const I18N = {
       filterCat: 'Filter by category',
       importGoogle: 'Import from Google Contacts', importing: 'Importing…', importGoogleDone: 'Imported {n} new, {s} already existed',
       selectAll: 'Select all', selectNone: 'Clear selection', selectedCount: '{n} of {total} selected',
-      importSelected: 'Import {n} contacts', alreadyExists: 'Exists', importNone: 'No contacts with a phone number found'
+      importSelected: 'Import {n} contacts', alreadyExists: 'Exists', importNone: 'No contacts with a phone number found',
+      importFile: 'Import from file (vCard)',
+      importFileHelp: 'This browser cannot open the phone\'s contacts directly. Export them to a vCard (.vcf) or CSV file and choose it here.',
+      importFileIos: 'On iPhone: Contacts → Lists → press and hold "All Contacts" (or "All iCloud") → Export → Save to Files.',
+      importFileIcloud: 'On a computer: icloud.com → Contacts → Select All → Export vCard.',
+      importFileAndroid: 'On Android: Contacts app → Fix & manage → Export to file.',
+      importFileGoogle: 'From Google: contacts.google.com → Export → vCard.',
+      chooseFile: 'Choose file',
+      importFileEmpty: 'No contacts with a phone number were found in the file'
     },
     cat: {
       friends: 'Friends', family: 'Family', work: 'Work', class: 'Classmates', army: 'Army',

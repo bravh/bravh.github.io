@@ -282,23 +282,79 @@ function vwHome(root) {
 /* ------------------------------------------------------------------ */
 /* CONTACTS LIST                                                      */
 /* ------------------------------------------------------------------ */
+/* Contact Picker API: Chrome on Android only */
+function vwHasContactPicker() { return !!(navigator.contacts && navigator.contacts.select); }
+
+/* "Import from phone": the Contact Picker when the browser has it (the result goes through the
+   same picker dialog as Google), otherwise the vCard / CSV file dialog (iPhone Safari, desktop). */
 async function importPhoneContacts() {
-  if (!(navigator.contacts && navigator.contacts.select)) { toast(t('contacts.importNA')); return; }
+  if (!vwHasContactPicker()) { vwImportFileDialog(); return; }
   let picked;
   try {
     picked = await navigator.contacts.select(['name', 'tel'], { multiple: true });
   } catch (e) { return; } /* cancelled / denied */
-  let n = 0;
+  const rows = [];
   for (const r of picked || []) {
     const phone = ((r.tel && r.tel[0]) || '').trim();
     const name = ((r.name && r.name[0]) || '').trim() || phone;
     if (!name) continue;
-    if (phone && findContactByPhone(phone)) continue;
-    upsertContact({ name, phone, cat: 'other', notes: '' });
-    n++;
+    rows.push({ name, phone, exists: !!(phone && findContactByPhone(phone)) });
   }
-  toast(t('contacts.imported', { n }));
-  rerender();
+  if (!rows.length) return;
+  vwImportDialog(rows, { title: t('contacts.import') });
+}
+
+/* Help modal for importing a vCard (.vcf) / CSV file exported from the phone, a computer or Google.
+   Parsing is done by VCard.parseFile (js/vcard.js); the parsed rows go to the shared picker dialog. */
+function vwImportFileDialog() {
+  const ua = navigator.userAgent || '';
+  const isIos = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/.test(ua);
+  const steps = isIos ? ['importFileIos', 'importFileIcloud']
+    : isAndroid ? ['importFileAndroid']
+    : ['importFileIcloud', 'importFileGoogle'];
+
+  const readText = file => (typeof file.text === 'function'
+    ? file.text()
+    : new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => reject(r.error);
+      r.readAsText(file);
+    }));
+
+  const fileIn = h('input', {
+    type: 'file', multiple: true,
+    accept: '.vcf,.vcard,.csv,text/vcard,text/x-vcard,text/csv',
+    /* visually hidden rather than display:none: iOS Safari ignores .click() on a display:none file input */
+    style: { position: 'absolute', width: '1px', height: '1px', opacity: '0', overflow: 'hidden', pointerEvents: 'none' },
+    onChange: async e => {
+      const files = Array.from(e.target.files || []);
+      e.target.value = '';   /* the same file can be picked again later */
+      if (!files.length) return;
+      try {
+        const all = [];
+        for (const file of files) all.push(...VCard.parseFile(file.name, await readText(file)));
+        const list = all.map(c => ({ name: c.name, phone: c.phone, exists: !!findContactByPhone(c.phone) }));
+        m.close();
+        if (!list.length) { toast(t('contacts.importFileEmpty')); return; }
+        vwImportDialog(list, { title: t('contacts.importFile') });
+      } catch (err) { toast(t('contacts.importFileEmpty')); }
+    }
+  });
+
+  const m = openModal({
+    title: t('contacts.importFile'),
+    body: h('div', null,
+      h('p', null, t('contacts.importFileHelp')),
+      h('div', { class: 'vw-stack' }, steps.map(k => h('div', { class: 'muted small' }, t('contacts.' + k)))),
+      fileIn),
+    actions: [
+      btn(t('common.cancel'), { onClick: () => m.close() }),
+      btn(t('contacts.chooseFile'), { class: 'primary', icon: 'import', onClick: () => fileIn.click() })
+    ]
+  });
+  return m;
 }
 
 /* Import from Google Contacts (People API). Signs in first when needed. */
@@ -318,7 +374,7 @@ function vwImportGoogleContacts(button) {
     .then(list => {
       done();
       if (!list || !list.length) { toast(t('contacts.importNone')); return; }
-      vwGoogleImportDialog(list);
+      vwImportDialog(list);
     })
     .catch(e => {
       done();
@@ -326,9 +382,24 @@ function vwImportGoogleContacts(button) {
     });
 }
 
-/* Picker for the fetched Google contacts [{name, phone, exists}]: search, select all (visible rows),
-   category, then import the checked ones. Rows are built once; filtering only toggles `hidden`. */
-function vwGoogleImportDialog(list) {
+/* Sync.importContacts, with the same rules inline for when sync.js failed to load
+   (phone and file imports do not need Google). Returns { imported, skipped }. */
+function vwImportItems(items, cat) {
+  if (window.Sync && Sync.importContacts) return Sync.importContacts(items, cat);
+  let imported = 0, skipped = 0;
+  for (const c of items) {
+    if (!c.name || !normPhone(c.phone) || findContactByPhone(c.phone)) { skipped++; continue; }
+    upsertContact({ name: c.name, phone: c.phone, cat: cat || 'other', notes: '' });
+    imported++;
+  }
+  return { imported, skipped };
+}
+
+/* Picker for contacts about to be imported [{name, phone, exists}] (Google, the phone's Contact Picker or
+   a vCard/CSV file): search, select all (visible rows), category, then import the checked ones.
+   opts.title defaults to the Google title. Rows are built once; filtering only toggles `hidden`. */
+function vwImportDialog(list, opts) {
+  opts = opts || {};
   const rows = [];          /* {name, phone, key, exists, nameLc, digits, el, cb} */
   const sel = new Set();    /* keys of checked rows. Key = last 9 digits, the same rule findContactByPhone uses */
   const seen = new Set();
@@ -430,7 +501,7 @@ function vwGoogleImportDialog(list) {
     onClick: () => {
       const items = rows.filter(r => !r.exists && sel.has(r.key)).map(r => ({ name: r.name, phone: r.phone }));
       if (!items.length) return;
-      const r = Sync.importContacts(items, catSel.value || 'other');
+      const r = vwImportItems(items, catSel.value || 'other');
       m.close();
       toast(t('contacts.importGoogleDone', { n: r.imported, s: r.skipped }));
       rerender();
@@ -439,7 +510,7 @@ function vwGoogleImportDialog(list) {
   importBtn.append(importLbl);   /* btn() skips an empty label, so the live label span is added here */
 
   const m = openModal({
-    title: t('contacts.importGoogle'),
+    title: opts.title || t('contacts.importGoogle'),
     body: h('div', null,
       sb.el,
       h('div', { class: 'imp-bar' }, toggleBtn, counter),
@@ -501,11 +572,18 @@ function vwContacts(root) {
     icon: 'import', class: 'block', onClick: () => vwImportGoogleContacts(googleBtn)
   });
 
+  /* The phone button only exists where the Contact Picker does (Chrome on Android); everywhere else the
+     file import takes its place, so nothing ever says "not supported". */
+  const hasPicker = vwHasContactPicker();
+  const fileBtn = btn(t('contacts.importFile'), { icon: 'import', class: 'block', onClick: vwImportFileDialog });
+  if (hasPicker) fileBtn.style.gridColumn = '1 / -1';   /* own row under the two buttons */
+  const importBtns = hasPicker
+    ? [btn(t('contacts.import'), { icon: 'import', class: 'block', onClick: importPhoneContacts }), googleBtn, fileBtn]
+    : [fileBtn, googleBtn];
+
   root.append(
     sb.el, catChips, sortSeg, listWrap,
-    h('div', { class: 'grid2' },
-      btn(t('contacts.import'), { icon: 'import', class: 'block', onClick: importPhoneContacts }),
-      googleBtn),
+    h('div', { class: 'grid2' }, importBtns),
     h('div', { style: { height: '72px' } }),
     fab);
   renderList();
