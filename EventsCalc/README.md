@@ -61,6 +61,9 @@ Sign-in uses Google Identity Services in the browser only (no server). Once sign
 
 ## Importing contacts
 
+On iPhone, Safari ships the Contact Picker behind a switch: Settings → Apps → Safari → Advanced → Feature Flags → **Contact Picker API**. Once it is on, "Import from phone" opens the phone's own contact picker, as on Android. The app detects the picker and otherwise explains the switch.
+
+
 The Contacts screen offers three ways to bring contacts in. All of them end in the same picker (search, select all, category, already-existing contacts greyed out):
 
 - **Phone contact picker** (Chrome on Android only): the "Import from phone" button opens the system contact picker. The button is hidden in browsers that lack the Contact Picker API.

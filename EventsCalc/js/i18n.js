@@ -34,7 +34,12 @@ const I18N = {
       importFileAndroid: 'באנדרואיד: אפליקציית אנשי הקשר ← תיקון וניהול ← ייצוא לקובץ.',
       importFileGoogle: 'מ-Google: contacts.google.com ← ייצוא ← vCard.',
       chooseFile: 'בחירת קובץ',
-      importFileEmpty: 'לא נמצאו אנשי קשר עם מספר טלפון בקובץ'
+      importFileEmpty: 'לא נמצאו אנשי קשר עם מספר טלפון בקובץ',
+      iosPickerTitle: 'גישה לאנשי הקשר באייפון',
+      iosPickerHelp: 'ספארי באייפון חוסם לאתרים את הגישה לאנשי הקשר עד שמפעילים זאת פעם אחת בהגדרות:',
+      iosPickerSteps: 'הגדרות ← אפליקציות ← Safari ← מתקדם ← Feature Flags ← Contact Picker API ← הפעלה. (באייפון ישן יותר: הגדרות ← Safari ← מתקדם ← Experimental Features.)',
+      iosPickerAfter: 'אחר כך חזרו לכאן, טענו מחדש את הדף ולחצו שוב על "ייבוא מהטלפון". הבחירה תיפתח ישירות מאנשי הקשר של הטלפון.',
+      reload: 'הפעלתי, טעינה מחדש', useFileInstead: 'ייבוא מקובץ במקום'
     },
     cat: {
       friends: 'חברים', family: 'משפחה', work: 'עבודה', class: 'לימודים', army: 'צבא',
@@ -133,7 +138,12 @@ const I18N = {
       importFileAndroid: 'On Android: Contacts app → Fix & manage → Export to file.',
       importFileGoogle: 'From Google: contacts.google.com → Export → vCard.',
       chooseFile: 'Choose file',
-      importFileEmpty: 'No contacts with a phone number were found in the file'
+      importFileEmpty: 'No contacts with a phone number were found in the file',
+      iosPickerTitle: 'Contacts access on iPhone',
+      iosPickerHelp: 'Safari on iPhone blocks websites from the contacts until you switch it on once in Settings:',
+      iosPickerSteps: 'Settings → Apps → Safari → Advanced → Feature Flags → Contact Picker API → on. (Older iPhones: Settings → Safari → Advanced → Experimental Features.)',
+      iosPickerAfter: 'Then come back here, reload the page and tap "Import from phone" again. The picker opens straight from the phone’s contacts.',
+      reload: 'Done, reload', useFileInstead: 'Import from file instead'
     },
     cat: {
       friends: 'Friends', family: 'Family', work: 'Work', class: 'Classmates', army: 'Army',

@@ -282,13 +282,34 @@ function vwHome(root) {
 /* ------------------------------------------------------------------ */
 /* CONTACTS LIST                                                      */
 /* ------------------------------------------------------------------ */
-/* Contact Picker API: Chrome on Android only */
+/* Contact Picker API: Chrome on Android by default; Safari on iOS once the user turns on its feature flag */
 function vwHasContactPicker() { return !!(navigator.contacts && navigator.contacts.select); }
+function vwIsIos() {
+  const ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+/* iPhone without the picker: Safari hides it behind Settings -> Safari -> Advanced -> Feature Flags.
+   Explain the one-time switch, offer a reload (the flag only applies to a fresh page) or the file route. */
+function vwIosPickerDialog() {
+  const m = openModal({
+    title: t('contacts.iosPickerTitle'),
+    body: h('div', null,
+      h('p', null, t('contacts.iosPickerHelp')),
+      h('p', { class: 'vw-bold' }, t('contacts.iosPickerSteps')),
+      h('p', { class: 'muted small' }, t('contacts.iosPickerAfter'))),
+    actions: [
+      btn(t('contacts.useFileInstead'), { icon: 'import', onClick: () => { m.close(); vwImportFileDialog(); } }),
+      btn(t('contacts.reload'), { class: 'primary', icon: 'check', onClick: () => location.reload() })
+    ]
+  });
+  return m;
+}
 
 /* "Import from phone": the Contact Picker when the browser has it (the result goes through the
    same picker dialog as Google), otherwise the vCard / CSV file dialog (iPhone Safari, desktop). */
 async function importPhoneContacts() {
-  if (!vwHasContactPicker()) { vwImportFileDialog(); return; }
+  if (!vwHasContactPicker()) { if (vwIsIos()) vwIosPickerDialog(); else vwImportFileDialog(); return; }
   let picked;
   try {
     picked = await navigator.contacts.select(['name', 'tel'], { multiple: true });
@@ -307,9 +328,8 @@ async function importPhoneContacts() {
 /* Help modal for importing a vCard (.vcf) / CSV file exported from the phone, a computer or Google.
    Parsing is done by VCard.parseFile (js/vcard.js); the parsed rows go to the shared picker dialog. */
 function vwImportFileDialog() {
-  const ua = navigator.userAgent || '';
-  const isIos = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isAndroid = /Android/.test(ua);
+  const isIos = vwIsIos();
+  const isAndroid = /Android/.test(navigator.userAgent || '');
   const steps = isIos ? ['importFileIos', 'importFileIcloud']
     : isAndroid ? ['importFileAndroid']
     : ['importFileIcloud', 'importFileGoogle'];
@@ -574,7 +594,7 @@ function vwContacts(root) {
 
   /* The phone button only exists where the Contact Picker does (Chrome on Android); everywhere else the
      file import takes its place, so nothing ever says "not supported". */
-  const hasPicker = vwHasContactPicker();
+  const hasPicker = vwHasContactPicker() || vwIsIos();   /* iPhone: the button explains the one-time Safari switch */
   const fileBtn = btn(t('contacts.importFile'), { icon: 'import', class: 'block', onClick: vwImportFileDialog });
   if (hasPicker) fileBtn.style.gridColumn = '1 / -1';   /* own row under the two buttons */
   const importBtns = hasPicker
