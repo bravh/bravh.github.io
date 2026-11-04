@@ -156,7 +156,8 @@ def write_if_changed(path, payload, stamp):
 def main():
     if len(sys.argv) > 1:
         with open(sys.argv[1], encoding="utf-8-sig") as f:
-            text, modified = f.read(), None
+            # Optional 2nd argument: the file's Last-Modified header, e.g. "Wed, 04 Nov 2026 09:42:15 GMT".
+            text, modified = f.read(), (sys.argv[2] if len(sys.argv) > 2 else None)
     else:
         text, modified = fetch()
     results, cities = build(text)
